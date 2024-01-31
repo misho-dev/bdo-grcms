@@ -1,25 +1,25 @@
-import logo from './logo.svg';
-import './App.css';
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import Sidebar from './components/Sidebar';
+import MainContainer from './components/MainContainer';
+import OrganizationManagementPage from './pages/OrganizationManagementPage';
+import AssetInventoryPage from './pages/AssetInventoryPage';
 
 function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+    return (
+        <Router>
+            <div style={{ display: 'flex' }}>
+                <Sidebar />
+                <MainContainer>
+                    <Routes>
+                      <Route path="/organizations" element={<OrganizationManagementPage />} />
+                      <Route path="/asset-inventory/:orgId" element={<AssetInventoryPage />} />
+                        {/* Add more routes as needed */}
+                    </Routes>
+                </MainContainer>
+            </div>
+        </Router>
+    );
 }
 
 export default App;

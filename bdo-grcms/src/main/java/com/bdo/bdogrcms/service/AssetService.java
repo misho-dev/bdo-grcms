@@ -9,6 +9,8 @@ public interface AssetService {
 
     List<Asset> findAllAssets();
 
+    List<Asset> findAssetsByOrganization(Long organizationId);
+
     Optional<Asset> findAssetById(Long id);
 
     Asset saveAsset(Asset asset);

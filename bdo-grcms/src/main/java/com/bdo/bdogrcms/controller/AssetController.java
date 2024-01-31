@@ -1,6 +1,7 @@
 package com.bdo.bdogrcms.controller;
 
 import com.bdo.bdogrcms.model.Asset;
+import com.bdo.bdogrcms.model.Organization;
 import com.bdo.bdogrcms.service.AssetService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -12,6 +13,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/assets")
+@CrossOrigin(origins = "http://localhost:3000")
 public class AssetController {
 
     private final AssetService assetService;
@@ -26,7 +28,16 @@ public class AssetController {
         List<Asset> assets = assetService.findAllAssets();
         return new ResponseEntity<>(assets, HttpStatus.OK);
     }
-
+    @GetMapping("/organization/{organizationId}")
+    public ResponseEntity<List<Asset>> getAssetsByOrganization(@PathVariable Long organizationId) {
+        List<Asset> assets = assetService.findAssetsByOrganization(organizationId);
+        for(Asset asset : assets){
+            Organization org = new Organization(asset.getOrganization().getName());
+            org.setId(asset.getOrganization().getId());
+            asset.setOrganization(org);
+        }
+        return new ResponseEntity<>(assets, HttpStatus.OK);
+    }
     @GetMapping("/{id}")
     public ResponseEntity<Asset> getAssetById(@PathVariable Long id) {
         Optional<Asset> asset = assetService.findAssetById(id);

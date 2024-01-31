@@ -23,7 +23,10 @@ public class AssetServiceImpl implements AssetService {
     public List<Asset> findAllAssets() {
         return assetRepository.findAll();
     }
-
+    @Override
+    public List<Asset> findAssetsByOrganization(Long organizationId) {
+        return assetRepository.findByOrganizationId(organizationId);
+    }
     @Override
     public Optional<Asset> findAssetById(Long id) {
         return assetRepository.findById(id);

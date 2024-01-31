@@ -12,6 +12,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/organizations")
+@CrossOrigin(origins = "http://localhost:3000")
 public class OrganizationController {
 
     private final OrganizationService organizationService;
@@ -23,7 +24,11 @@ public class OrganizationController {
 
     @GetMapping
     public ResponseEntity<List<Organization>> getAllOrganizations() {
-        return new ResponseEntity<>(organizationService.findAllOrganizations(), HttpStatus.OK);
+        List<Organization> orgs = organizationService.findAllOrganizations();
+        for(Organization org : orgs) {
+            org.setAssets(null);
+        }
+        return new ResponseEntity<>(orgs, HttpStatus.OK);
     }
 
     @GetMapping("/{id}")
