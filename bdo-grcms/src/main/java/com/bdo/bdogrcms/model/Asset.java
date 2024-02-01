@@ -4,6 +4,7 @@ import com.bdo.bdogrcms.enums.Level;
 import com.bdo.bdogrcms.enums.LifeCycleStage;
 import com.bdo.bdogrcms.enums.Status;
 import com.bdo.bdogrcms.enums.Type;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -59,9 +60,8 @@ public class Asset {
     @Enumerated(EnumType.STRING)
     private LifeCycleStage currentLifeCycleStage;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "organization_id")
-    private Organization organization;
+    @Column(name = "organization_id")
+    private Long organizationId;
 
     // Additional constructors, methods, or business logic can be added as needed
 }

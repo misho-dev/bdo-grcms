@@ -2,7 +2,9 @@ package com.bdo.bdogrcms.controller;
 
 import com.bdo.bdogrcms.model.Asset;
 import com.bdo.bdogrcms.model.Organization;
+import com.bdo.bdogrcms.repository.OrganizationRepository;
 import com.bdo.bdogrcms.service.AssetService;
+import com.bdo.bdogrcms.service.OrganizationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,9 +21,13 @@ public class AssetController {
     private final AssetService assetService;
 
     @Autowired
+    private OrganizationRepository organizationRepository;
+
+    @Autowired
     public AssetController(AssetService assetService) {
         this.assetService = assetService;
     }
+
 
     @GetMapping
     public ResponseEntity<List<Asset>> getAllAssets() {
@@ -31,11 +37,6 @@ public class AssetController {
     @GetMapping("/organization/{organizationId}")
     public ResponseEntity<List<Asset>> getAssetsByOrganization(@PathVariable Long organizationId) {
         List<Asset> assets = assetService.findAssetsByOrganization(organizationId);
-        for(Asset asset : assets){
-            Organization org = new Organization(asset.getOrganization().getName());
-            org.setId(asset.getOrganization().getId());
-            asset.setOrganization(org);
-        }
         return new ResponseEntity<>(assets, HttpStatus.OK);
     }
     @GetMapping("/{id}")
@@ -47,8 +48,7 @@ public class AssetController {
 
     @PostMapping
     public ResponseEntity<Asset> createAsset(@RequestBody Asset asset) {
-        Asset newAsset = assetService.saveAsset(asset);
-        return new ResponseEntity<>(newAsset, HttpStatus.CREATED);
+        return new ResponseEntity<>(assetService.saveAsset(asset), HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")

@@ -25,9 +25,6 @@ public class OrganizationController {
     @GetMapping
     public ResponseEntity<List<Organization>> getAllOrganizations() {
         List<Organization> orgs = organizationService.findAllOrganizations();
-        for(Organization org : orgs) {
-            org.setAssets(null);
-        }
         return new ResponseEntity<>(orgs, HttpStatus.OK);
     }
 
