@@ -1,0 +1,30 @@
+# Ignore Node.js build artifacts
+/node_modules
+npm-debug.log
+yarn-error.log
+
+# Ignore build output for React (create-react-app)
+/build
+
+# Ignore build output for Spring Boot
+/target
+
+# Ignore IDE and text editor files
+*.iml
+*.ipr
+*.iws
+.idea/
+.vscode/
+
+# Ignore application.properties (Spring Boot configuration file)
+/src/main/resources/application.properties
+
+# Ignore database config files (if any)
+/src/main/resources/*.db
+
+# Ignore sensitive files with passwords or API keys
+/secrets/
+
+# Ignore temporary files or editor backups
+*~
+*.swp

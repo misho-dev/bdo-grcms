@@ -19,11 +19,16 @@ const AssetInventoryPage = () => {
   const [selectedFileName, setSelectedFileName] = useState("");
   const [filters, setFilters] = useState({ name: "", type: "" });
   const [showFilterModal, setShowFilterModal] = useState(false);
+  
+
+  const SERVER_URL = "http://192.168.169.11:8080";
+
+  const LOCAL_URL = "http://localhost:8080"
 
   useEffect(() => {
     if (orgId) {
       axios
-        .get(`http://localhost:8080/api/assets/organization/${orgId}`)
+        .get(`http://192.168.169.11:8080/api/assets/organization/${orgId}`)
         .then((response) => {
           setAssets(response.data);
         })
@@ -55,7 +60,7 @@ const AssetInventoryPage = () => {
   const handleDeleteAsset = () => {
     if (selectedAsset && selectedAsset.id) {
       axios
-        .delete(`http://localhost:8080/api/assets/${selectedAsset.id}`)
+        .delete(`${SERVER_URL}/api/assets/${selectedAsset.id}`)
         .then(() => {
           // Remove the deleted asset from the assets state
           const updatedAssets = assets.filter(
@@ -94,7 +99,7 @@ const AssetInventoryPage = () => {
     if (selectedAsset && selectedAsset.id) {
       // Edit existing asset
       axios
-        .put(`http://localhost:8080/api/assets/${selectedAsset.id}`, newAsset)
+        .put(`${SERVER_URL}/api/assets/${selectedAsset.id}`, newAsset)
         .then((response) => {
           const updatedAssets = assets.map((asset) =>
             asset.id === selectedAsset.id ? response.data : asset
@@ -108,7 +113,7 @@ const AssetInventoryPage = () => {
       // Add new asset
       formData.organizationId = orgId; // Add organization ID for new asset
       axios
-        .post("http://localhost:8080/api/assets", newAsset, orgId)
+        .post(`${SERVER_URL}/api/assets`, newAsset, orgId)
         .then((response) => {
           setAssets([...assets, response.data]);
           setShowAssetForm(false);
@@ -137,7 +142,7 @@ const AssetInventoryPage = () => {
     formData.append("orgId", orgId); // Append orgId if needed by the backend
 
     axios
-      .post("http://localhost:8080/api/assets/import", formData, {
+      .post(`${SERVER_URL}/api/assets/import`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -153,7 +158,7 @@ const AssetInventoryPage = () => {
   };
 
   const handleExportAssets = () => {
-    window.location.href = `http://localhost:8080/api/assets/export/${orgId}`;
+    window.location.href = `${SERVER_URL}/api/assets/export/${orgId}`;
   };
 
   const handleOpenFilterModal = () => {
@@ -171,7 +176,7 @@ const AssetInventoryPage = () => {
 
     axios
       .get(
-        `http://localhost:8080/api/assets/filter?orgId=${orgId}&${queryParams}`
+        `${SERVER_URL}/api/assets/filter?orgId=${orgId}&${queryParams}`
       )
       .then((response) => {
         setAssets(response.data);
