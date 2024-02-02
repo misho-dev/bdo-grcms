@@ -5,5 +5,6 @@ public enum Type {
     SERVER,
     DOCUMENT,
     PHYSICAL_ASSET,
-    BUSINESS_PROCESS
+    BUSINESS_PROCESS,
+    ELECTRONIC
 }

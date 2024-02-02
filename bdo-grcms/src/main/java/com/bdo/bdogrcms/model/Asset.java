@@ -5,6 +5,7 @@ import com.bdo.bdogrcms.enums.LifeCycleStage;
 import com.bdo.bdogrcms.enums.Status;
 import com.bdo.bdogrcms.enums.Type;
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -18,6 +19,7 @@ import java.util.Date;
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
 public class Asset {
 
     @Id

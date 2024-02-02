@@ -4,5 +4,6 @@ public enum LifeCycleStage {
     CREATION,
     UTILIZATION,
     MAINTENANCE,
-    DISPOSAL
+    DISPOSAL,
+
 }
