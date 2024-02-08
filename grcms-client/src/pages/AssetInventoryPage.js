@@ -21,7 +21,7 @@ const AssetInventoryPage = () => {
   const [showFilterModal, setShowFilterModal] = useState(false);
   
 
-  const SERVER_URL = "http://192.168.169.11:8080";
+  const SERVER_URL = process.env.REACT_APP_SERVER_URL;
 
   const LOCAL_URL = "http://localhost:8080"
 
