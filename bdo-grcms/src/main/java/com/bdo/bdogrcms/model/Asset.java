@@ -59,8 +59,7 @@ public class Asset {
     @Enumerated(EnumType.STRING)
     private Type type;
 
-    @Enumerated(EnumType.STRING)
-    private LifeCycleStage currentLifeCycleStage;
+    private String version;
 
     @Column(name = "organization_id")
     private Long organizationId;

@@ -1,57 +1,224 @@
-import React from 'react';
+import React from "react";
+import {
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Button,
+  Box,
+} from "@mui/material";
+import { useState } from "react";
 
 const AssetForm = ({ onSubmit, defaultValues }) => {
-    const levels = ['LOW', 'MEDIUM', 'HIGH'];
-    const statusOptions = ['ACTIVE', 'INACTIVE', 'DISPOSED'];
-    const typeOptions = ['PC', 'SERVER', 'DOCUMENT', 'PHYSICAL_ASSET', 'BUSINESS_PROCESS'];
-    const lifeCycleStages = ['CREATION', 'UTILIZATION', 'MAINTENANCE', 'DISPOSAL'];
+  const levels = ["LOW", "MEDIUM", "HIGH"];
+  const statusOptions = ["ACTIVE", "INACTIVE", "DISPOSED"];
+  const typeOptions = [
+    "PC",
+    "SERVER",
+    "DOCUMENT",
+    "PHYSICAL_ASSET",
+    "BUSINESS_PROCESS",
+  ];
 
-    return (
-        <form onSubmit={onSubmit}>
-            <input type="text" name="name" defaultValue={defaultValues.name} placeholder="Name" required /><br />
+  // Using React state to manage the retentionPeriod value
+  const [retentionPeriod, setRetentionPeriod] = useState(
+    defaultValues.retentionPeriod || ""
+  );
 
-            <select name="criticality" defaultValue={defaultValues.criticality}>
-                {levels.map(level => <option key={level} value={level}>{level}</option>)}
-            </select><br />
+  // Handle change event for the retentionPeriod TextField
+  const handleRetentionPeriodChange = (event) => {
+    const newValue = event.target.value;
+    // Check if the new value is within the allowed range
+    if (newValue <= 120 && newValue >= 0) {
+      setRetentionPeriod(newValue);
+    }
+  };
 
-            <select name="confidentiality" defaultValue={defaultValues.confidentiality}>
-                {levels.map(level => <option key={level} value={level}>{level}</option>)}
-            </select><br />
+  return (
+    <form onSubmit={onSubmit}>
+      <TextField
+        name="name"
+        defaultValue={defaultValues.name}
+        label="Name"
+        variant="outlined"
+        fullWidth
+        margin="normal"
+        required
+      />
 
-            <select name="availability" defaultValue={defaultValues.availability}>
-                {levels.map(level => <option key={level} value={level}>{level}</option>)}
-            </select><br />
+      <FormControl fullWidth margin="normal">
+        <InputLabel>Criticality</InputLabel>
+        <Select
+          name="criticality"
+          defaultValue={defaultValues.criticality}
+          label="Criticality"
+        >
+          {levels.map((level) => (
+            <MenuItem key={level} value={level}>
+              {level}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
 
-            <select name="integrity" defaultValue={defaultValues.integrity}>
-                {levels.map(level => <option key={level} value={level}>{level}</option>)}
-            </select><br />
+      <FormControl fullWidth margin="normal">
+        <InputLabel>Confidentiality</InputLabel>
+        <Select
+          name="confidentiality"
+          defaultValue={defaultValues.confidentiality}
+          label="Confidentiality"
+        >
+          {levels.map((level) => (
+            <MenuItem key={level} value={level}>
+              {level}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
 
-            <input type="text" name="owner" defaultValue={defaultValues.owner} placeholder="Owner" /><br />
-            <input type="text" name="location" defaultValue={defaultValues.location} placeholder="Location" /><br />
-            <input type="text" name="department" defaultValue={defaultValues.department} placeholder="Department" /><br />
+      <FormControl fullWidth margin="normal">
+        <InputLabel>Availability</InputLabel>
+        <Select
+          name="availability"
+          defaultValue={defaultValues.availability}
+          label="Availability"
+        >
+          {levels.map((level) => (
+            <MenuItem key={level} value={level}>
+              {level}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
 
-            <input type="number" name="retentionPeriod" defaultValue={defaultValues.retentionPeriod} placeholder="Retention Period (in seconds)" /><br />
-            <input type="number" name="financialValue" defaultValue={defaultValues.financialValue} placeholder="Financial Value" /><br />
+      <FormControl fullWidth margin="normal">
+        <InputLabel>Integrity</InputLabel>
+        <Select
+          name="integrity"
+          defaultValue={defaultValues.integrity}
+          label="Integrity"
+        >
+          {levels.map((level) => (
+            <MenuItem key={level} value={level}>
+              {level}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
 
-            <input type="date" name="acquisitionDate" defaultValue={defaultValues.acquisitionDate} /><br />
+      <TextField
+        name="owner"
+        defaultValue={defaultValues.owner}
+        label="Owner"
+        variant="outlined"
+        fullWidth
+        margin="normal"
+      />
 
-            <select name="status" defaultValue={defaultValues.status}>
-                {statusOptions.map(status => <option key={status} value={status}>{status}</option>)}
-            </select><br />
+      <TextField
+        name="location"
+        defaultValue={defaultValues.location}
+        label="Location"
+        variant="outlined"
+        fullWidth
+        margin="normal"
+      />
 
-            <select name="type" defaultValue={defaultValues.type}>
-                {typeOptions.map(type => <option key={type} value={type}>{type}</option>)}
-            </select><br />
+      <TextField
+        name="department"
+        defaultValue={defaultValues.department}
+        label="Department"
+        variant="outlined"
+        fullWidth
+        margin="normal"
+      />
 
-            <select name="currentLifeCycleStage" defaultValue={defaultValues.currentLifeCycleStage}>
-                {lifeCycleStages.map(stage => <option key={stage} value={stage}>{stage}</option>)}
-            </select><br />
+      <TextField
+        type="number"
+        name="retentionPeriod"
+        value={retentionPeriod}
+        onChange={handleRetentionPeriodChange} // Set the onChange handler
+        label="Retention Period (in Months)"
+        variant="outlined"
+        fullWidth
+        margin="normal"
+        inputProps={{
+          min: 0, // Minimum value
+          max: 120, // Maximum value
+        }}
+      />
 
-            <input type="hidden" name="organizationId" value={defaultValues.organizationId} />
+      <TextField
+        type="number"
+        name="financialValue"
+        defaultValue={defaultValues.financialValue}
+        label="Financial Value"
+        variant="outlined"
+        fullWidth
+        margin="normal"
+      />
 
-            <button type="submit">Submit</button>
-        </form>
-    );
+      <TextField
+        type="date"
+        name="acquisitionDate"
+        defaultValue={defaultValues.acquisitionDate}
+        label="Acquisition Date"
+        variant="outlined"
+        fullWidth
+        margin="normal"
+        InputLabelProps={{ shrink: true }}
+      />
+
+      <FormControl fullWidth margin="normal">
+        <InputLabel>Status</InputLabel>
+        <Select
+          name="status"
+          defaultValue={defaultValues.status}
+          label="Status"
+        >
+          {statusOptions.map((status) => (
+            <MenuItem key={status} value={status}>
+              {status}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+
+      <FormControl fullWidth margin="normal">
+        <InputLabel>Type</InputLabel>
+        <Select name="type" defaultValue={defaultValues.type} label="Type">
+          {typeOptions.map((type) => (
+            <MenuItem key={type} value={type}>
+              {type}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+
+      <TextField
+        name="version"
+        defaultValue={defaultValues.version}
+        label="Version"
+        variant="outlined"
+        fullWidth
+        margin="normal"
+      />
+
+      {/* The organizationId field is hidden and typically does not need a Material-UI component */}
+      <input
+        type="hidden"
+        name="organizationId"
+        value={defaultValues.organizationId}
+      />
+
+      <Box display="flex" justifyContent="flex-end" mt={2}>
+        <Button type="submit" variant="contained" color="primary">
+          Submit
+        </Button>
+      </Box>
+    </form>
+  );
 };
 
 export default AssetForm;

@@ -1,9 +1,11 @@
 package com.bdo.bdogrcms.controller;
 
+import com.bdo.bdogrcms.enums.LifeCycleStage;
 import com.bdo.bdogrcms.model.Asset;
 import com.bdo.bdogrcms.service.AssetService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,9 +19,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+
+import com.bdo.bdogrcms.enums.Status;
+import com.bdo.bdogrcms.enums.Type;
+import com.bdo.bdogrcms.enums.Level;
+import java.math.BigInteger;
 
 @RestController
 @RequestMapping("/api/assets")
@@ -40,10 +45,32 @@ public class AssetController {
         return new ResponseEntity<>(assets, HttpStatus.OK);
     }
 
-    @GetMapping("/organization/{organizationId}")
-    public ResponseEntity<List<Asset>> getAssetsByOrganization(@PathVariable Long organizationId) {
-        List<Asset> assets = assetService.findAssetsByOrganization(organizationId);
-        return new ResponseEntity<>(assets, HttpStatus.OK);
+    @GetMapping("/organization")
+    public ResponseEntity<List<Asset>> getAssetsByOrganization(
+                                                                 @RequestParam(required = true) Long orgId,
+                                                                 @RequestParam(required = false) String name,
+                                                                 @RequestParam(required = false) Type type,
+                                                                 @RequestParam(required = false) Level criticality,
+                                                                 @RequestParam(required = false) Level confidentiality,
+                                                                 @RequestParam(required = false) Level availability,
+                                                                 @RequestParam(required = false) Level integrity,
+                                                                 @RequestParam(required = false) String owner,
+                                                                 @RequestParam(required = false) String location,
+                                                                 @RequestParam(required = false) String department,
+                                                                 @RequestParam(required = false) Integer minRetentionPeriod,
+                                                                 @RequestParam(required = false) Integer maxRetentionPeriod,
+                                                                 @RequestParam(required = false) BigInteger minFinancialValue,
+                                                                 @RequestParam(required = false) BigInteger maxFinancialValue,
+                                                                 @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date startDate,
+                                                                 @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date endDate,
+                                                                 @RequestParam(required = false) Status status
+    ) {
+        List<Asset> filteredAssets = assetService.findByOrganizationIdAndFilters(orgId, name,
+                criticality, confidentiality, availability, integrity, owner, location, department,
+                minRetentionPeriod, maxRetentionPeriod, minFinancialValue, maxFinancialValue,
+                startDate, endDate, status, type);
+
+        return ResponseEntity.ok(filteredAssets);
     }
 
     @GetMapping("/{id}")
@@ -102,7 +129,7 @@ public class AssetController {
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String type) {
 
-        List<Asset> filteredAssets = assetService.findByOrganizationIdAndFilters(orgId, name, type);
+        List<Asset> filteredAssets = new ArrayList<>();
         return ResponseEntity.ok(filteredAssets);
     }
 }

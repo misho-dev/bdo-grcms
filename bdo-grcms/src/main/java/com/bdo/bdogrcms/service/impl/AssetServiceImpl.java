@@ -10,6 +10,7 @@ import com.bdo.bdogrcms.repository.AssetRepository;
 import com.bdo.bdogrcms.service.AssetService;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -67,6 +68,7 @@ public class AssetServiceImpl implements AssetService {
         InputStream inputStream = file.getInputStream();
         Workbook workbook = new XSSFWorkbook(inputStream);
         Sheet sheet = workbook.getSheetAt(0);
+        DataFormatter formatter = new DataFormatter();
 
         sheet.forEach(row -> {
             if (row.getRowNum() != 0) { // Skip header
@@ -83,7 +85,8 @@ public class AssetServiceImpl implements AssetService {
                 Date acquisitionDate = row.getCell(10).getDateCellValue();
                 Status status = Status.valueOf(row.getCell(11).getStringCellValue().toUpperCase());
                 Type type = Type.valueOf(row.getCell(12).getStringCellValue().toUpperCase());
-                LifeCycleStage currentLifeCycleStage = LifeCycleStage.valueOf(row.getCell(13).getStringCellValue().toUpperCase());
+                String version = formatter.formatCellValue(row.getCell(13));
+
 
                 Asset asset = new Asset();
                 asset.setName(name);
@@ -99,7 +102,7 @@ public class AssetServiceImpl implements AssetService {
                 asset.setAcquisitionDate(acquisitionDate);
                 asset.setStatus(status);
                 asset.setType(type);
-                asset.setCurrentLifeCycleStage(currentLifeCycleStage);
+                asset.setVersion(version);
                 asset.setOrganizationId(orgId);
 
                 assetRepository.save(asset);
@@ -140,20 +143,31 @@ public class AssetServiceImpl implements AssetService {
     }
 
     @Override
-    public List<Asset> findByOrganizationIdAndFilters(Long organizationId, String name, String type) {
+    public List<Asset> findByOrganizationIdAndFilters(Long organizationId, String name,
+                                                      Level criticality, Level confidentiality, Level availability,
+                                                      Level integrity, String owner, String location, String department,
+                                                      Integer minRetentionPeriod, Integer maxRetentionPeriod,
+                                                      BigInteger minFinancialValue, BigInteger maxFinancialValue,
+                                                      Date startDate, Date endDate, Status status, Type type) {
         Specification<Asset> spec = Specification.where(null);
 
         if (organizationId != null) {
             spec = spec.and((root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get("organizationId"), organizationId));
         }
 
-        if (name != null && !name.isEmpty()) {
-            spec = spec.and(AssetSpecifications.hasName(name));
-        }
-
-        if (type != null && !type.isEmpty()) {
-            spec = spec.and(AssetSpecifications.hasType(type));
-        }
+        spec = spec.and(AssetSpecifications.hasName(name))
+                .and(AssetSpecifications.hasType(type))
+                .and(AssetSpecifications.hasCriticality(criticality))
+                .and(AssetSpecifications.hasConfidentiality(confidentiality))
+                .and(AssetSpecifications.hasAvailability(availability))
+                .and(AssetSpecifications.hasIntegrity(integrity))
+                .and(AssetSpecifications.hasOwner(owner))
+                .and(AssetSpecifications.hasLocation(location))
+                .and(AssetSpecifications.hasDepartment(department))
+                .and(AssetSpecifications.hasRetentionPeriod(minRetentionPeriod, maxRetentionPeriod))
+                .and(AssetSpecifications.hasFinancialValue(minFinancialValue, maxFinancialValue))
+                .and(AssetSpecifications.hasAcquisitionDateRange(startDate, endDate))
+                .and(AssetSpecifications.hasStatus(status));
 
         return assetRepository.findAll(spec);
     }

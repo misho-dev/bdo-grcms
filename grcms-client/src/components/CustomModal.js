@@ -8,12 +8,15 @@ const style = {
     top: '50%',
     left: '50%',
     transform: 'translate(-50%, -50%)',
-    width: 400,
+    width: 600, // Adjust width as needed
+    maxHeight: '80vh', // Set maximum height
     bgcolor: 'background.paper',
     border: '2px solid #000',
     boxShadow: 24,
     p: 4,
+    overflowY: 'auto', // Enable vertical scrolling
 };
+
 
 const CustomModal = ({ open, handleClose, title, children }) => {
     return (

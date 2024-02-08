@@ -27,7 +27,8 @@ const CustomDataTable = ({ columns, data, onSelectRow, selectedRow }) => {
                         >
                             {columns.map(column => (
                                 <TableCell key={column.id}>
-                                    {row[column.id]}
+                                     {column.id === 'acquisitionDate' ? new Date(row[column.id]).toLocaleDateString() : 
+                                    column.id === 'financialValue' ? `${row[column.id]} ₾` : row[column.id]}
                                 </TableCell>
                             ))}
                         </TableRow>

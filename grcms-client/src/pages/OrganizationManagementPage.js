@@ -15,10 +15,12 @@ const OrganizationManagementPage = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const navigate = useNavigate();
 
+  const SERVER_URL = process.env.REACT_APP_SERVER_URL;
+
   // Fetch organizations from backend on component mount
   useEffect(() => {
     axios
-      .get("http://localhost:8080/api/organizations")
+      .get(`${SERVER_URL}/api/organizations`)
       .then((response) => {
         console.log(response.data);
         setOrganizations(response.data);
@@ -38,7 +40,7 @@ const OrganizationManagementPage = () => {
     };
 
     axios
-      .post("http://localhost:8080/api/organizations", newOrganization)
+      .post(`${SERVER_URL}/api/organizations`, newOrganization)
       .then((response) => {
         setOrganizations([...organizations, response.data]);
         handleCloseModal();
@@ -57,7 +59,7 @@ const OrganizationManagementPage = () => {
 
     axios
       .put(
-        `http://localhost:8080/api/organizations/${selectedOrganization.id}`,
+        `${SERVER_URL}/api/organizations/${selectedOrganization.id}`,
         updatedOrganization
       )
       .then((response) => {
@@ -75,7 +77,7 @@ const OrganizationManagementPage = () => {
     if (selectedOrganization) {
       axios
         .delete(
-          `http://localhost:8080/api/organizations/${selectedOrganization.id}`
+          `${SERVER_URL}/api/organizations/${selectedOrganization.id}`
         )
         .then(() => {
           setOrganizations(
