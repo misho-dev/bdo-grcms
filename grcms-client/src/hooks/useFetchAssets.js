@@ -9,7 +9,7 @@ export const useFetchAssets = (orgId, filters = {}) => {
     const fetchAssets = async () => {
       try {
         const params = new URLSearchParams({ ...filters, orgId }).toString();
-        const response = await axios.get(`${process.env.REACT_APP_SERVER_URL}/api/assets?${params}`);
+        const response = await axios.get(`${process.env.REACT_APP_SERVER_URL}/api/assets/organization?${params}`);
         setAssets(response.data);
       } catch (error) {
         console.error("Error fetching assets:", error);
