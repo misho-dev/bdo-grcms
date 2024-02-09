@@ -14,9 +14,17 @@ const AssetForm = ({ onSubmit, defaultValues }) => {
   const levels = ["LOW", "MEDIUM", "HIGH"];
   const statusOptions = ["ACTIVE", "INACTIVE", "DISPOSED"];
   const typeOptions = [
-    "PC",
-    "SERVER",
-    "DOCUMENT",
+    "LAPTOP",
+    "WORKSTATION",
+    "PHYSICAL_SERVER",
+    "VIRTUAL_SERVER",
+    "HARD_COPY_DOCUMENT",
+    "PHYSICAL_LOCATION",
+    "CLOUD_SERVICE",
+    "_3RD_PARTY_APP",
+    "DATABASE",
+    "HARDWARE",
+    "INFORMATION",
     "PHYSICAL_ASSET",
     "BUSINESS_PROCESS",
   ];
@@ -46,6 +54,26 @@ const AssetForm = ({ onSubmit, defaultValues }) => {
         margin="normal"
         required
       />
+
+      <TextField
+        name="version"
+        defaultValue={defaultValues.version}
+        label="Version"
+        variant="outlined"
+        fullWidth
+        margin="normal"
+      />
+
+      <FormControl fullWidth margin="normal">
+        <InputLabel>Type</InputLabel>
+        <Select name="type" defaultValue={defaultValues.type} label="Type">
+          {typeOptions.map((type) => (
+            <MenuItem key={type} value={type}>
+              {type}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
 
       <FormControl fullWidth margin="normal">
         <InputLabel>Criticality</InputLabel>
@@ -184,26 +212,6 @@ const AssetForm = ({ onSubmit, defaultValues }) => {
           ))}
         </Select>
       </FormControl>
-
-      <FormControl fullWidth margin="normal">
-        <InputLabel>Type</InputLabel>
-        <Select name="type" defaultValue={defaultValues.type} label="Type">
-          {typeOptions.map((type) => (
-            <MenuItem key={type} value={type}>
-              {type}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-
-      <TextField
-        name="version"
-        defaultValue={defaultValues.version}
-        label="Version"
-        variant="outlined"
-        fullWidth
-        margin="normal"
-      />
 
       {/* The organizationId field is hidden and typically does not need a Material-UI component */}
       <input

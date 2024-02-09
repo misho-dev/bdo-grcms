@@ -69,7 +69,7 @@ const FilterForm = ({ filters, setFilters }) => {
                     onChange={(e) => setFilters({ ...filters, confidentiality: e.target.value })}
                 >
                     <MenuItem value="">Select Confidentiality Level</MenuItem>
-                    {types.map(level => (
+                    {levels.map(level => (
                         <MenuItem key={level} value={level}>{level}</MenuItem>
                     ))}
                 </Select>
@@ -84,7 +84,7 @@ const FilterForm = ({ filters, setFilters }) => {
                     onChange={(e) => setFilters({ ...filters, availability: e.target.value })}
                 >
                     <MenuItem value="">Select Availability Level</MenuItem>
-                    {types.map(level => (
+                    {levels.map(level => (
                         <MenuItem key={level} value={level}>{level}</MenuItem>
                     ))}
                 </Select>
@@ -99,7 +99,7 @@ const FilterForm = ({ filters, setFilters }) => {
                     onChange={(e) => setFilters({ ...filters, integrity: e.target.value })}
                 >
                     <MenuItem value="">Select integrity Level</MenuItem>
-                    {types.map(level => (
+                    {levels.map(level => (
                         <MenuItem key={level} value={level}>{level}</MenuItem>
                     ))}
                 </Select>

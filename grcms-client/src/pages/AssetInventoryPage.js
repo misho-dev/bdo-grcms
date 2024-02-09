@@ -8,7 +8,7 @@ import { useParams } from "react-router-dom"; // To get the organization ID from
 import CustomModal from "../components/CustomModal";
 import AssetForm from "../forms/AssetForm";
 import FilterForm from "../forms/FilterForm";
-import {useFetchAssets} from "../hooks/useFetchAssets";
+import { useFetchAssets } from "../hooks/useFetchAssets";
 import { useDeleteAsset } from "../hooks/useDeleteAsset";
 import { useSaveAsset } from "../hooks/useSaveAsset";
 import { useImportAssets } from "../hooks/useImportAssets";
@@ -24,13 +24,16 @@ const AssetInventoryPage = () => {
   const [filters, setFilters] = useState({ name: "", type: "" });
   const [showFilterModal, setShowFilterModal] = useState(false);
 
-  const deleteAsset = useDeleteAsset(orgId, assets, setAssets, setSelectedAsset);
+  const deleteAsset = useDeleteAsset(
+    orgId,
+    assets,
+    setAssets,
+    setSelectedAsset
+  );
   const saveAsset = useSaveAsset(setAssets, setShowAssetForm, setSelectedAsset);
   const importAssets = useImportAssets(setAssets, orgId);
 
   const SERVER_URL = process.env.REACT_APP_SERVER_URL;
-
-
 
   const handleSelectRow = (asset) => {
     setSelectedAsset(asset);
@@ -119,26 +122,50 @@ const AssetInventoryPage = () => {
 
   const fetchFilteredAssets = () => {
     const queryParams = new URLSearchParams();
-    if(filters.name) queryParams.append("name", filters.name || ""); // Example for optional string parameter
+    if (filters.name) queryParams.append("name", filters.name || ""); // Example for optional string parameter
     // For enums or similar, ensure the value is correctly formatted or defaulted
-    if(filters.criticality) queryParams.append("criticality", filters.criticality || "");
-    if(filters.confidentiality) queryParams.append("confidentiality", filters.confidentiality || "");
-    if(filters.availability) queryParams.append("availability", filters.availability || "");
-    if(filters.integrity) queryParams.append("integrity", filters.integrity || "");
-    if(filters.owner) queryParams.append("owner", filters.owner || "");
-    if(filters.location) queryParams.append("location", filters.location || "");
-    if(filters.department) queryParams.append("department", filters.department || "");
+    if (filters.criticality)
+      queryParams.append("criticality", filters.criticality || "");
+    if (filters.confidentiality)
+      queryParams.append("confidentiality", filters.confidentiality || "");
+    if (filters.availability)
+      queryParams.append("availability", filters.availability || "");
+    if (filters.integrity)
+      queryParams.append("integrity", filters.integrity || "");
+    if (filters.owner) queryParams.append("owner", filters.owner || "");
+    if (filters.location)
+      queryParams.append("location", filters.location || "");
+    if (filters.department)
+      queryParams.append("department", filters.department || "");
     // For numeric values, convert to string, handle null/undefined cases
-    if(filters.minRetentionPeriod) queryParams.append("minRetentionPeriod", filters.minRetentionPeriod ? filters.minRetentionPeriod.toString() : "");
-    if(filters.maxRetentionPeriod) queryParams.append("maxRetentionPeriod", filters.maxRetentionPeriod ? filters.maxRetentionPeriod.toString() : "");
+    if (filters.minRetentionPeriod)
+      queryParams.append(
+        "minRetentionPeriod",
+        filters.minRetentionPeriod ? filters.minRetentionPeriod.toString() : ""
+      );
+    if (filters.maxRetentionPeriod)
+      queryParams.append(
+        "maxRetentionPeriod",
+        filters.maxRetentionPeriod ? filters.maxRetentionPeriod.toString() : ""
+      );
     // Handle BigInteger in JavaScript: assuming these values are handled as strings
-    if(filters.minFinancialValue) queryParams.append("minFinancialValue", filters.minFinancialValue || "");
-    if(filters.maxFinancialValue) queryParams.append("maxFinancialValue", filters.maxFinancialValue || "");
+    if (filters.minFinancialValue)
+      queryParams.append("minFinancialValue", filters.minFinancialValue || "");
+    if (filters.maxFinancialValue)
+      queryParams.append("maxFinancialValue", filters.maxFinancialValue || "");
     // For dates, convert to the expected format (ISO 8601 string)
-    if(filters.startDate) queryParams.append("startDate", filters.startDate ? filters.startDate.toISOString().split('T')[0] : "");
-    if(filters.endDate) queryParams.append("endDate", filters.endDate ? filters.endDate.toISOString().split('T')[0] : "");
-    if(filters.status) queryParams.append("status", filters.status || "");
-    if(filters.type) queryParams.append("type", filters.type || "");
+    if (filters.startDate)
+      queryParams.append(
+        "startDate",
+        filters.startDate ? filters.startDate.toISOString().split("T")[0] : ""
+      );
+    if (filters.endDate)
+      queryParams.append(
+        "endDate",
+        filters.endDate ? filters.endDate.toISOString().split("T")[0] : ""
+      );
+    if (filters.status) queryParams.append("status", filters.status || "");
+    if (filters.type) queryParams.append("type", filters.type || "");
 
     axios
       .get(
@@ -167,6 +194,7 @@ const AssetInventoryPage = () => {
 
   const columns = [
     { id: "name", label: "Name", minWidth: 170 },
+    { id: "version", label: "Version", minWidth: 150 },
     { id: "criticality", label: "Criticality", minWidth: 100 },
     { id: "confidentiality", label: "Confidentiality", minWidth: 100 },
     { id: "availability", label: "Availability", minWidth: 100 },
@@ -175,22 +203,21 @@ const AssetInventoryPage = () => {
     { id: "location", label: "Location", minWidth: 100 },
     { id: "department", label: "Department", minWidth: 100 },
     { id: "retentionPeriod", label: "Retention Period", minWidth: 100 },
-    { id: "financialValue", label: "Financial Value", minWidth: 100 },
     { id: "acquisitionDate", label: "Acquisition Date", minWidth: 100 },
+    { id: "dateOfDisposal", label: "Date of Disposal", minWidth: 100 },
+    { id: "financialValue", label: "Financial Value", minWidth: 100 },
     { id: "status", label: "Status", minWidth: 100 },
     { id: "type", label: "Type", minWidth: 100 },
-    { id: "version", label: "version", minWidth: 150 },
   ];
-
 
   const extractFormData = (formData) => {
     let asset = {};
     for (let [key, value] of formData.entries()) {
       switch (key) {
-        case 'retentionPeriod':
+        case "retentionPeriod":
           asset[key] = parseInt(value, 10);
           break;
-        case 'financialValue':
+        case "financialValue":
           asset[key] = parseFloat(value);
           break;
         default:
@@ -201,7 +228,7 @@ const AssetInventoryPage = () => {
   };
 
   return (
-    <div>
+    <div style={{width: "calc(100vw - 280px)"}}>
       <PageTitle title="Asset Inventory" />
       <CustomToolbar>
         <Button variant="contained" onClick={handleAddAsset}>
