@@ -195,6 +195,7 @@ const AssetInventoryPage = () => {
   const columns = [
     { id: "name", label: "Name", minWidth: 170 },
     { id: "version", label: "Version", minWidth: 150 },
+    { id: "type", label: "Type", minWidth: 100 },
     { id: "criticality", label: "Criticality", minWidth: 100 },
     { id: "confidentiality", label: "Confidentiality", minWidth: 100 },
     { id: "availability", label: "Availability", minWidth: 100 },
@@ -206,8 +207,7 @@ const AssetInventoryPage = () => {
     { id: "acquisitionDate", label: "Acquisition Date", minWidth: 100 },
     { id: "dateOfDisposal", label: "Date of Disposal", minWidth: 100 },
     { id: "financialValue", label: "Financial Value", minWidth: 100 },
-    { id: "status", label: "Status", minWidth: 100 },
-    { id: "type", label: "Type", minWidth: 100 },
+    { id: "status", label: "Status", minWidth: 100 }
   ];
 
   const extractFormData = (formData) => {
