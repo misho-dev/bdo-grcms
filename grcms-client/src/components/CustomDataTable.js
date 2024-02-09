@@ -33,8 +33,8 @@ const CustomDataTable = ({ columns, data, onSelectRow, selectedRow }) => {
 
 
   return (
-    <Paper sx={{ width: "100%", overflow: "hidden" }}>
-      <TableContainer  sx={{ maxHeight: 700 }}>
+    <Paper sx={{ width: "100%", overflow: "hidden"}}>
+      <TableContainer  sx={{  height: 'calc(100vh - 250px)' }}>
         <Table stickyHeader aria-label="sticky table">
           <TableHead>
             <TableRow>
@@ -49,7 +49,9 @@ const CustomDataTable = ({ columns, data, onSelectRow, selectedRow }) => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {data.map((row) => (
+            {data
+            .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+            .map((row) => (
               <TableRow
                 key={row.id}
                 selected={selectedRow === row.id}

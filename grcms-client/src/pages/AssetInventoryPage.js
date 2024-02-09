@@ -228,7 +228,7 @@ const AssetInventoryPage = () => {
   };
 
   return (
-    <div style={{width: "calc(100vw - 280px)"}}>
+    <div style={{width: "calc(100vw - 310px)"}}>
       <PageTitle title="Asset Inventory" />
       <CustomToolbar>
         <Button variant="contained" onClick={handleAddAsset}>
