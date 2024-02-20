@@ -155,36 +155,70 @@ public class AssetServiceImpl implements AssetService {
         }
     }
 
-
     @Override
     public void exportAssetsToExcel(HttpServletResponse response, Long orgId) throws IOException {
-        List<Asset> assets = assetRepository.findByOrganizationId(orgId); // Fetch assets for organization
+        List<Asset> assets = assetRepository.findByOrganizationId(orgId); // Fetch assets
 
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("Assets");
 
-        // Create a header row
-        Row headerRow = sheet.createRow(0);
-        headerRow.createCell(0).setCellValue("Name");
-        // Add other headers
+        // Dynamically create header row based on asset properties
+        List<String> headers = Arrays.asList("Name", "Criticality", "Confidentiality", "Availability", "Integrity", "Owner", "Location", "Department", "Retention Period", "Financial Value", "Acquisition Date", "Status", "Type", "Version");
+        createHeaderRow(sheet, headers);
 
-        // Fill data
-        int rowNum = 1;
-        for (Asset asset : assets) {
-            Row row = sheet.createRow(rowNum++);
-            row.createCell(0).setCellValue(asset.getName());
-            // Fill other asset details
-        }
+        // Fill data rows
+        populateSheetWithData(sheet, assets);
 
-        // Set content type and header
+        // Set content type and header for response
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         response.setHeader("Content-Disposition", "attachment; filename=assets.xlsx");
 
-        // Write the workbook to the response's output stream
-        ServletOutputStream outputStream = response.getOutputStream();
-        workbook.write(outputStream);
-        workbook.close();
-        outputStream.close();
+        // Write workbook to the response's output stream
+        try (ServletOutputStream outputStream = response.getOutputStream()) {
+            workbook.write(outputStream);
+        } finally {
+            workbook.close();
+        }
+    }
+
+    private void createHeaderRow(Sheet sheet, List<String> headers) {
+        Row headerRow = sheet.createRow(0);
+        for (int i = 0; i < headers.size(); i++) {
+            headerRow.createCell(i).setCellValue(headers.get(i));
+        }
+    }
+
+    private void populateSheetWithData(Sheet sheet, List<Asset> assets) {
+        DataFormatter formatter = new DataFormatter();
+        int rowNum = 1;
+        for (Asset asset : assets) {
+            Row row = sheet.createRow(rowNum++);
+            populateRowWithAssetData(row, asset, formatter);
+        }
+    }
+
+    private void populateRowWithAssetData(Row row, Asset asset, DataFormatter formatter) {
+        // Assuming you have getters in your Asset class for each property
+        row.createCell(0).setCellValue(asset.getName());
+        row.createCell(1).setCellValue(asset.getCriticality().toString());
+        row.createCell(2).setCellValue(asset.getConfidentiality().toString());
+        row.createCell(3).setCellValue(asset.getAvailability().toString());
+        row.createCell(4).setCellValue(asset.getIntegrity().toString());
+        row.createCell(5).setCellValue(asset.getOwner());
+        row.createCell(6).setCellValue(asset.getLocation());
+        row.createCell(7).setCellValue(asset.getDepartment());
+        row.createCell(8).setCellValue(asset.getRetentionPeriod());
+        row.createCell(9).setCellValue(asset.getFinancialValue().toString());
+        // For date, you might want to format it
+        CellStyle dateCellStyle = row.getSheet().getWorkbook().createCellStyle();
+        CreationHelper createHelper = row.getSheet().getWorkbook().getCreationHelper();
+        dateCellStyle.setDataFormat(createHelper.createDataFormat().getFormat("dd-MM-yyyy"));
+        Cell dateCell = row.createCell(10);
+        dateCell.setCellValue(asset.getAcquisitionDate());
+        dateCell.setCellStyle(dateCellStyle);
+        row.createCell(11).setCellValue(asset.getStatus().toString());
+        row.createCell(12).setCellValue(asset.getType().toString());
+        row.createCell(13).setCellValue(asset.getVersion());
     }
 
     @Override
