@@ -10,10 +10,7 @@ import com.bdo.bdogrcms.repository.AssetRepository;
 import com.bdo.bdogrcms.service.AssetService;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletResponse;
-import org.apache.poi.ss.usermodel.DataFormatter;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.domain.Specification;
@@ -24,11 +21,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
+import java.math.RoundingMode;
+import java.util.*;
 
 @Service
 public class AssetServiceImpl implements AssetService {
@@ -68,48 +64,97 @@ public class AssetServiceImpl implements AssetService {
         InputStream inputStream = file.getInputStream();
         Workbook workbook = new XSSFWorkbook(inputStream);
         Sheet sheet = workbook.getSheetAt(0);
-        DataFormatter formatter = new DataFormatter();
 
-        sheet.forEach(row -> {
-            if (row.getRowNum() != 0) { // Skip header
-                String name = row.getCell(0).getStringCellValue();
-                Level criticality = Level.valueOf(row.getCell(1).getStringCellValue().toUpperCase());
-                Level confidentiality = Level.valueOf(row.getCell(2).getStringCellValue().toUpperCase());
-                Level availability = Level.valueOf(row.getCell(3).getStringCellValue().toUpperCase());
-                Level integrity = Level.valueOf(row.getCell(4).getStringCellValue().toUpperCase());
-                String owner = row.getCell(5).getStringCellValue();
-                String location = row.getCell(6).getStringCellValue();
-                String department = row.getCell(7).getStringCellValue();
-                int retentionPeriod = (int) row.getCell(8).getNumericCellValue();
-                BigInteger financialValue = BigInteger.valueOf((long) row.getCell(9).getNumericCellValue());
-                Date acquisitionDate = row.getCell(10).getDateCellValue();
-                Status status = Status.valueOf(row.getCell(11).getStringCellValue().toUpperCase());
-                Type type = Type.valueOf(row.getCell(12).getStringCellValue().toUpperCase());
-                String version = formatter.formatCellValue(row.getCell(13));
+        // Determine column order from header
+        Row headerRow = sheet.getRow(0);
+        Map<String, Integer> columnIndices = new HashMap<>();
+        for (Cell cell : headerRow) {
+            columnIndices.put(cell.getStringCellValue(), cell.getColumnIndex());
+        }
 
-
-                Asset asset = new Asset();
-                asset.setName(name);
-                asset.setCriticality(criticality);
-                asset.setConfidentiality(confidentiality);
-                asset.setAvailability(availability);
-                asset.setIntegrity(integrity);
-                asset.setOwner(owner);
-                asset.setLocation(location);
-                asset.setDepartment(department);
-                asset.setRetentionPeriod(retentionPeriod);
-                asset.setFinancialValue(financialValue);
-                asset.setAcquisitionDate(acquisitionDate);
-                asset.setStatus(status);
-                asset.setType(type);
-                asset.setVersion(version);
-                asset.setOrganizationId(orgId);
-
-                assetRepository.save(asset);
-            }
-        });
+        // Process each row
+        for (Row row : sheet) {
+            if (row.getRowNum() == 0) continue; // Skip header
+            // Save asset if conversion is successful
+            convertRowToAsset(row, columnIndices, orgId).ifPresent(assetRepository::save);
+        }
         workbook.close();
     }
+
+
+    private Optional<Asset> convertRowToAsset(Row row, Map<String, Integer> columnIndices, Long orgId) {
+        DataFormatter formatter = new DataFormatter();
+        try {
+            Asset asset = new Asset();
+
+            columnIndices.forEach((columnName, index) -> {
+                Cell cell = row.getCell(index);
+                String cellValue = formatter.formatCellValue(cell);
+                switch (columnName.toUpperCase()) {
+                    case "NAME":
+                        asset.setName(cellValue);
+                        break;
+                    case "CRITICALITY":
+                        asset.setCriticality(Level.valueOf(cellValue.toUpperCase()));
+                        break;
+                    case "CONFIDENTIALITY":
+                        asset.setConfidentiality(Level.valueOf(cellValue.toUpperCase()));
+                        break;
+                    case "AVAILABILITY":
+                        asset.setAvailability(Level.valueOf(cellValue.toUpperCase()));
+                        break;
+                    case "INTEGRITY":
+                        asset.setIntegrity(Level.valueOf(cellValue.toUpperCase()));
+                        break;
+                    case "OWNER":
+                        asset.setOwner(cellValue);
+                        break;
+                    case "LOCATION":
+                        asset.setLocation(cellValue);
+                        break;
+                    case "DEPARTMENT":
+                        asset.setDepartment(cellValue);
+                        break;
+                    case "RETENTION PERIOD":
+                        // Convert string to integer safely, handling decimal values
+                        double retentionPeriodDouble = Double.parseDouble(cellValue);
+                        asset.setRetentionPeriod((int) retentionPeriodDouble);
+                        break;
+                    case "FINANCIAL VALUE":
+                        // Convert string to BigInteger, handling decimal values
+                        BigDecimal financialValueDecimal = new BigDecimal(cellValue);
+                        asset.setFinancialValue(financialValueDecimal.toBigInteger());
+                        break;
+                    // Handle "ACQUISITION DATE" with care for non-date formatted cells
+                    case "ACQUISITION DATE":
+                        if(cell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(cell)){
+                            asset.setAcquisitionDate(cell.getDateCellValue());
+                        }
+                        break;
+                    case "STATUS":
+                        asset.setStatus(Status.valueOf(cellValue.toUpperCase()));
+                        break;
+                    case "TYPE":
+                        try {
+                            asset.setType(Type.valueOf(cellValue.toUpperCase()));
+                        } catch (IllegalArgumentException e) {
+                            asset.setType(Type.INFORMATION); // Default to INFORMATION if type is not recognized
+                        }
+                        break;
+                    case "VERSION":
+                        asset.setVersion(cellValue);
+                        break;
+                }
+            });
+            asset.setOrganizationId(orgId); // Assuming orgId is available in scope or passed as argument
+            return Optional.of(asset);
+        } catch (Exception e) {
+            // Log the error along with row number
+            System.err.println("Skipping row " + row.getRowNum() + ": " + e.getMessage());
+            return Optional.empty();
+        }
+    }
+
 
     @Override
     public void exportAssetsToExcel(HttpServletResponse response, Long orgId) throws IOException {

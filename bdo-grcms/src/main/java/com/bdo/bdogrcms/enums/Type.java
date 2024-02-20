@@ -14,4 +14,5 @@ public enum Type {
     INFORMATION,
     PHYSICAL_ASSET,
     BUSINESS_PROCESS,
+    OTHER,
 }
