@@ -10,9 +10,7 @@ import com.bdo.bdogrcms.repository.AssetRepository;
 import com.bdo.bdogrcms.service.AssetService;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletResponse;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.domain.Specification;
@@ -23,11 +21,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
+import java.math.RoundingMode;
+import java.util.*;
 
 @Service
 public class AssetServiceImpl implements AssetService {
@@ -68,92 +65,188 @@ public class AssetServiceImpl implements AssetService {
         Workbook workbook = new XSSFWorkbook(inputStream);
         Sheet sheet = workbook.getSheetAt(0);
 
-        sheet.forEach(row -> {
-            if (row.getRowNum() != 0) { // Skip header
-                String name = row.getCell(0).getStringCellValue();
-                Level criticality = Level.valueOf(row.getCell(1).getStringCellValue().toUpperCase());
-                Level confidentiality = Level.valueOf(row.getCell(2).getStringCellValue().toUpperCase());
-                Level availability = Level.valueOf(row.getCell(3).getStringCellValue().toUpperCase());
-                Level integrity = Level.valueOf(row.getCell(4).getStringCellValue().toUpperCase());
-                String owner = row.getCell(5).getStringCellValue();
-                String location = row.getCell(6).getStringCellValue();
-                String department = row.getCell(7).getStringCellValue();
-                int retentionPeriod = (int) row.getCell(8).getNumericCellValue();
-                BigInteger financialValue = BigInteger.valueOf((long) row.getCell(9).getNumericCellValue());
-                Date acquisitionDate = row.getCell(10).getDateCellValue();
-                Status status = Status.valueOf(row.getCell(11).getStringCellValue().toUpperCase());
-                Type type = Type.valueOf(row.getCell(12).getStringCellValue().toUpperCase());
-                LifeCycleStage currentLifeCycleStage = LifeCycleStage.valueOf(row.getCell(13).getStringCellValue().toUpperCase());
+        // Determine column order from header
+        Row headerRow = sheet.getRow(0);
+        Map<String, Integer> columnIndices = new HashMap<>();
+        for (Cell cell : headerRow) {
+            columnIndices.put(cell.getStringCellValue(), cell.getColumnIndex());
+        }
 
-                Asset asset = new Asset();
-                asset.setName(name);
-                asset.setCriticality(criticality);
-                asset.setConfidentiality(confidentiality);
-                asset.setAvailability(availability);
-                asset.setIntegrity(integrity);
-                asset.setOwner(owner);
-                asset.setLocation(location);
-                asset.setDepartment(department);
-                asset.setRetentionPeriod(retentionPeriod);
-                asset.setFinancialValue(financialValue);
-                asset.setAcquisitionDate(acquisitionDate);
-                asset.setStatus(status);
-                asset.setType(type);
-                asset.setCurrentLifeCycleStage(currentLifeCycleStage);
-                asset.setOrganizationId(orgId);
-
-                assetRepository.save(asset);
-            }
-        });
+        // Process each row
+        for (Row row : sheet) {
+            if (row.getRowNum() == 0) continue; // Skip header
+            // Save asset if conversion is successful
+            convertRowToAsset(row, columnIndices, orgId).ifPresent(assetRepository::save);
+        }
         workbook.close();
+    }
+
+
+    private Optional<Asset> convertRowToAsset(Row row, Map<String, Integer> columnIndices, Long orgId) {
+        DataFormatter formatter = new DataFormatter();
+        try {
+            Asset asset = new Asset();
+
+            columnIndices.forEach((columnName, index) -> {
+                Cell cell = row.getCell(index);
+                String cellValue = formatter.formatCellValue(cell);
+                switch (columnName.toUpperCase()) {
+                    case "NAME":
+                        asset.setName(cellValue);
+                        break;
+                    case "CRITICALITY":
+                        asset.setCriticality(Level.valueOf(cellValue.toUpperCase()));
+                        break;
+                    case "CONFIDENTIALITY":
+                        asset.setConfidentiality(Level.valueOf(cellValue.toUpperCase()));
+                        break;
+                    case "AVAILABILITY":
+                        asset.setAvailability(Level.valueOf(cellValue.toUpperCase()));
+                        break;
+                    case "INTEGRITY":
+                        asset.setIntegrity(Level.valueOf(cellValue.toUpperCase()));
+                        break;
+                    case "OWNER":
+                        asset.setOwner(cellValue);
+                        break;
+                    case "LOCATION":
+                        asset.setLocation(cellValue);
+                        break;
+                    case "DEPARTMENT":
+                        asset.setDepartment(cellValue);
+                        break;
+                    case "RETENTION PERIOD":
+                        // Convert string to integer safely, handling decimal values
+                        double retentionPeriodDouble = Double.parseDouble(cellValue);
+                        asset.setRetentionPeriod((int) retentionPeriodDouble);
+                        break;
+                    case "FINANCIAL VALUE":
+                        // Convert string to BigInteger, handling decimal values
+                        BigDecimal financialValueDecimal = new BigDecimal(cellValue);
+                        asset.setFinancialValue(financialValueDecimal.toBigInteger());
+                        break;
+                    // Handle "ACQUISITION DATE" with care for non-date formatted cells
+                    case "ACQUISITION DATE":
+                        if(cell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(cell)){
+                            asset.setAcquisitionDate(cell.getDateCellValue());
+                        }
+                        break;
+                    case "STATUS":
+                        asset.setStatus(Status.valueOf(cellValue.toUpperCase()));
+                        break;
+                    case "TYPE":
+                        try {
+                            asset.setType(Type.valueOf(cellValue.toUpperCase()));
+                        } catch (IllegalArgumentException e) {
+                            asset.setType(Type.INFORMATION); // Default to INFORMATION if type is not recognized
+                        }
+                        break;
+                    case "VERSION":
+                        asset.setVersion(cellValue);
+                        break;
+                }
+            });
+            asset.setOrganizationId(orgId); // Assuming orgId is available in scope or passed as argument
+            return Optional.of(asset);
+        } catch (Exception e) {
+            // Log the error along with row number
+            System.err.println("Skipping row " + row.getRowNum() + ": " + e.getMessage());
+            return Optional.empty();
+        }
     }
 
     @Override
     public void exportAssetsToExcel(HttpServletResponse response, Long orgId) throws IOException {
-        List<Asset> assets = assetRepository.findByOrganizationId(orgId); // Fetch assets for organization
+        List<Asset> assets = assetRepository.findByOrganizationId(orgId); // Fetch assets
 
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("Assets");
 
-        // Create a header row
-        Row headerRow = sheet.createRow(0);
-        headerRow.createCell(0).setCellValue("Name");
-        // Add other headers
+        // Dynamically create header row based on asset properties
+        List<String> headers = Arrays.asList("Name", "Criticality", "Confidentiality", "Availability", "Integrity", "Owner", "Location", "Department", "Retention Period", "Financial Value", "Acquisition Date", "Status", "Type", "Version");
+        createHeaderRow(sheet, headers);
 
-        // Fill data
-        int rowNum = 1;
-        for (Asset asset : assets) {
-            Row row = sheet.createRow(rowNum++);
-            row.createCell(0).setCellValue(asset.getName());
-            // Fill other asset details
-        }
+        // Fill data rows
+        populateSheetWithData(sheet, assets);
 
-        // Set content type and header
+        // Set content type and header for response
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         response.setHeader("Content-Disposition", "attachment; filename=assets.xlsx");
 
-        // Write the workbook to the response's output stream
-        ServletOutputStream outputStream = response.getOutputStream();
-        workbook.write(outputStream);
-        workbook.close();
-        outputStream.close();
+        // Write workbook to the response's output stream
+        try (ServletOutputStream outputStream = response.getOutputStream()) {
+            workbook.write(outputStream);
+        } finally {
+            workbook.close();
+        }
+    }
+
+    private void createHeaderRow(Sheet sheet, List<String> headers) {
+        Row headerRow = sheet.createRow(0);
+        for (int i = 0; i < headers.size(); i++) {
+            headerRow.createCell(i).setCellValue(headers.get(i));
+        }
+    }
+
+    private void populateSheetWithData(Sheet sheet, List<Asset> assets) {
+        DataFormatter formatter = new DataFormatter();
+        int rowNum = 1;
+        for (Asset asset : assets) {
+            Row row = sheet.createRow(rowNum++);
+            populateRowWithAssetData(row, asset, formatter);
+        }
+    }
+
+    private void populateRowWithAssetData(Row row, Asset asset, DataFormatter formatter) {
+        // Assuming you have getters in your Asset class for each property
+        row.createCell(0).setCellValue(asset.getName());
+        row.createCell(1).setCellValue(asset.getCriticality().toString());
+        row.createCell(2).setCellValue(asset.getConfidentiality().toString());
+        row.createCell(3).setCellValue(asset.getAvailability().toString());
+        row.createCell(4).setCellValue(asset.getIntegrity().toString());
+        row.createCell(5).setCellValue(asset.getOwner());
+        row.createCell(6).setCellValue(asset.getLocation());
+        row.createCell(7).setCellValue(asset.getDepartment());
+        row.createCell(8).setCellValue(asset.getRetentionPeriod());
+        row.createCell(9).setCellValue(asset.getFinancialValue().toString());
+        // For date, you might want to format it
+        CellStyle dateCellStyle = row.getSheet().getWorkbook().createCellStyle();
+        CreationHelper createHelper = row.getSheet().getWorkbook().getCreationHelper();
+        dateCellStyle.setDataFormat(createHelper.createDataFormat().getFormat("dd-MM-yyyy"));
+        Cell dateCell = row.createCell(10);
+        dateCell.setCellValue(asset.getAcquisitionDate());
+        dateCell.setCellStyle(dateCellStyle);
+        row.createCell(11).setCellValue(asset.getStatus().toString());
+        row.createCell(12).setCellValue(asset.getType().toString());
+        row.createCell(13).setCellValue(asset.getVersion());
     }
 
     @Override
-    public List<Asset> findByOrganizationIdAndFilters(Long organizationId, String name, String type) {
+    public List<Asset> findByOrganizationIdAndFilters(Long organizationId, String name,
+                                                      Level criticality, Level confidentiality, Level availability,
+                                                      Level integrity, String owner, String location, String department,
+                                                      Integer minRetentionPeriod, Integer maxRetentionPeriod,
+                                                      BigInteger minFinancialValue, BigInteger maxFinancialValue,
+                                                      Date startDate, Date endDate, Status status, Type type) {
         Specification<Asset> spec = Specification.where(null);
 
         if (organizationId != null) {
             spec = spec.and((root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get("organizationId"), organizationId));
         }
 
-        if (name != null && !name.isEmpty()) {
-            spec = spec.and(AssetSpecifications.hasName(name));
-        }
-
-        if (type != null && !type.isEmpty()) {
-            spec = spec.and(AssetSpecifications.hasType(type));
-        }
+        spec = spec.and(AssetSpecifications.hasName(name))
+                .and(AssetSpecifications.hasType(type))
+                .and(AssetSpecifications.hasCriticality(criticality))
+                .and(AssetSpecifications.hasConfidentiality(confidentiality))
+                .and(AssetSpecifications.hasAvailability(availability))
+                .and(AssetSpecifications.hasIntegrity(integrity))
+                .and(AssetSpecifications.hasOwner(owner))
+                .and(AssetSpecifications.hasLocation(location))
+                .and(AssetSpecifications.hasDepartment(department))
+                .and(AssetSpecifications.hasRetentionPeriod(minRetentionPeriod, maxRetentionPeriod))
+                .and(AssetSpecifications.hasFinancialValue(minFinancialValue, maxFinancialValue))
+                .and(AssetSpecifications.hasAcquisitionDateRange(startDate, endDate))
+                .and(AssetSpecifications.hasStatus(status));
 
         return assetRepository.findAll(spec);
     }

@@ -1,10 +1,18 @@
 package com.bdo.bdogrcms.enums;
 
 public enum Type {
-    PC,
-    SERVER,
-    DOCUMENT,
+    LAPTOP,
+    WORKSTATION,
+    PHYSICAL_SERVER,
+    VIRTUAL_SERVER,
+    HARD_COPY_DOCUMENT,
+    PHYSICAL_LOCATION,
+    CLOUD_SERVICE,
+    _3RD_PARTY_APP,
+    DATABASE,
+    HARDWARE,
+    INFORMATION,
     PHYSICAL_ASSET,
     BUSINESS_PROCESS,
-    ELECTRONIC
+    OTHER,
 }

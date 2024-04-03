@@ -5,6 +5,7 @@ import com.bdo.bdogrcms.service.OrganizationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -12,7 +13,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/organizations")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001", "http://192.168.169.11:3000"})
 public class OrganizationController {
 
     private final OrganizationService organizationService;
@@ -21,18 +22,13 @@ public class OrganizationController {
     public OrganizationController(OrganizationService organizationService) {
         this.organizationService = organizationService;
     }
-
     @GetMapping
     public ResponseEntity<List<Organization>> getAllOrganizations() {
         List<Organization> orgs = organizationService.findAllOrganizations();
         return new ResponseEntity<>(orgs, HttpStatus.OK);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Organization> getOrganizationById(@PathVariable Long id) {
-        Optional<Organization> organization = organizationService.findOrganizationById(id);
-        return organization.map(value -> new ResponseEntity<>(value, HttpStatus.OK))
-                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
+    @GetMapping("/{id}") public ResponseEntity<Organization> getOrganizationById(@PathVariable Long id) {Optional<Organization> organization = organizationService.findOrganizationById(id);return organization.map(value -> new ResponseEntity<>(value, HttpStatus.OK)).orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
     @PostMapping

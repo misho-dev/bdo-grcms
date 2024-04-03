@@ -8,10 +8,14 @@ import { useParams } from "react-router-dom"; // To get the organization ID from
 import CustomModal from "../components/CustomModal";
 import AssetForm from "../forms/AssetForm";
 import FilterForm from "../forms/FilterForm";
+import { useFetchAssets } from "../hooks/useFetchAssets";
+import { useDeleteAsset } from "../hooks/useDeleteAsset";
+import { useSaveAsset } from "../hooks/useSaveAsset";
+import { useImportAssets } from "../hooks/useImportAssets";
 
 const AssetInventoryPage = () => {
   const { orgId } = useParams(); // Get the organization ID from the URL
-  const [assets, setAssets] = useState([]);
+  const [assets, setAssets] = useFetchAssets(orgId);
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [showAssetForm, setShowAssetForm] = useState(false);
   const [formDefaultValues, setFormDefaultValues] = useState({});
@@ -19,24 +23,17 @@ const AssetInventoryPage = () => {
   const [selectedFileName, setSelectedFileName] = useState("");
   const [filters, setFilters] = useState({ name: "", type: "" });
   const [showFilterModal, setShowFilterModal] = useState(false);
-  
+
+  const deleteAsset = useDeleteAsset(
+    orgId,
+    assets,
+    setAssets,
+    setSelectedAsset
+  );
+  const saveAsset = useSaveAsset(setAssets, setShowAssetForm, setSelectedAsset);
+  const importAssets = useImportAssets(setAssets, orgId);
 
   const SERVER_URL = process.env.REACT_APP_SERVER_URL;
-
-  const LOCAL_URL = "http://localhost:8080"
-
-  useEffect(() => {
-    if (orgId) {
-      axios
-        .get(`http://192.168.169.11:8080/api/assets/organization/${orgId}`)
-        .then((response) => {
-          setAssets(response.data);
-        })
-        .catch((error) =>
-          console.error("Error fetching assets for organization:", error)
-        );
-    }
-  }, [orgId]); // Dependency array ensures this runs when orgId changes
 
   const handleSelectRow = (asset) => {
     setSelectedAsset(asset);
@@ -57,19 +54,9 @@ const AssetInventoryPage = () => {
     }
   };
 
-  const handleDeleteAsset = () => {
+  const handleDeleteAsset = async () => {
     if (selectedAsset && selectedAsset.id) {
-      axios
-        .delete(`${SERVER_URL}/api/assets/${selectedAsset.id}`)
-        .then(() => {
-          // Remove the deleted asset from the assets state
-          const updatedAssets = assets.filter(
-            (asset) => asset.id !== selectedAsset.id
-          );
-          setAssets(updatedAssets);
-          setSelectedAsset(null); // Reset selected asset
-        })
-        .catch((error) => console.error("Error deleting asset:", error));
+      deleteAsset(selectedAsset.id);
     } else {
       alert("Please select an asset to delete.");
     }
@@ -78,48 +65,12 @@ const AssetInventoryPage = () => {
   const handleSubmitAssetForm = (event) => {
     event.preventDefault();
     const formData = new FormData(event.target);
-    const newAsset = {
-      name: formData.get("name"),
-      criticality: formData.get("criticality"),
-      confidentiality: formData.get("confidentiality"),
-      availability: formData.get("availability"),
-      integrity: formData.get("integrity"),
-      owner: formData.get("owner"),
-      location: formData.get("location"),
-      department: formData.get("department"),
-      retentionPeriod: parseInt(formData.get("retentionPeriod"), 10),
-      financialValue: parseFloat(formData.get("financialValue")),
-      acquisitionDate: formData.get("acquisitionDate"),
-      status: formData.get("status"),
-      type: formData.get("type"),
-      currentLifeCycleStage: formData.get("currentLifeCycleStage"),
-      organizationId: orgId, // Assuming this is passed from URL params
-    };
+    const newAsset = extractFormData(formData);
+    newAsset.organizationId = orgId;
 
-    if (selectedAsset && selectedAsset.id) {
-      // Edit existing asset
-      axios
-        .put(`${SERVER_URL}/api/assets/${selectedAsset.id}`, newAsset)
-        .then((response) => {
-          const updatedAssets = assets.map((asset) =>
-            asset.id === selectedAsset.id ? response.data : asset
-          );
-          setAssets(updatedAssets);
-          setShowAssetForm(false);
-          setSelectedAsset(null);
-        })
-        .catch((error) => console.error("Error updating asset:", error));
-    } else {
-      // Add new asset
-      formData.organizationId = orgId; // Add organization ID for new asset
-      axios
-        .post(`${SERVER_URL}/api/assets`, newAsset, orgId)
-        .then((response) => {
-          setAssets([...assets, response.data]);
-          setShowAssetForm(false);
-        })
-        .catch((error) => console.error("Error adding asset:", error));
-    }
+    const assetId = selectedAsset ? selectedAsset.id : undefined;
+
+    saveAsset(newAsset, assetId);
   };
 
   const handleFileChange = (event) => {
@@ -171,12 +122,54 @@ const AssetInventoryPage = () => {
 
   const fetchFilteredAssets = () => {
     const queryParams = new URLSearchParams();
-    if (filters.name) queryParams.append("name", filters.name);
-    if (filters.type) queryParams.append("type", filters.type);
+    if (filters.name) queryParams.append("name", filters.name || ""); // Example for optional string parameter
+    // For enums or similar, ensure the value is correctly formatted or defaulted
+    if (filters.criticality)
+      queryParams.append("criticality", filters.criticality || "");
+    if (filters.confidentiality)
+      queryParams.append("confidentiality", filters.confidentiality || "");
+    if (filters.availability)
+      queryParams.append("availability", filters.availability || "");
+    if (filters.integrity)
+      queryParams.append("integrity", filters.integrity || "");
+    if (filters.owner) queryParams.append("owner", filters.owner || "");
+    if (filters.location)
+      queryParams.append("location", filters.location || "");
+    if (filters.department)
+      queryParams.append("department", filters.department || "");
+    // For numeric values, convert to string, handle null/undefined cases
+    if (filters.minRetentionPeriod)
+      queryParams.append(
+        "minRetentionPeriod",
+        filters.minRetentionPeriod ? filters.minRetentionPeriod.toString() : ""
+      );
+    if (filters.maxRetentionPeriod)
+      queryParams.append(
+        "maxRetentionPeriod",
+        filters.maxRetentionPeriod ? filters.maxRetentionPeriod.toString() : ""
+      );
+    // Handle BigInteger in JavaScript: assuming these values are handled as strings
+    if (filters.minFinancialValue)
+      queryParams.append("minFinancialValue", filters.minFinancialValue || "");
+    if (filters.maxFinancialValue)
+      queryParams.append("maxFinancialValue", filters.maxFinancialValue || "");
+    // For dates, convert to the expected format (ISO 8601 string)
+    if (filters.startDate)
+      queryParams.append(
+        "startDate",
+        filters.startDate ? filters.startDate.toISOString().split("T")[0] : ""
+      );
+    if (filters.endDate)
+      queryParams.append(
+        "endDate",
+        filters.endDate ? filters.endDate.toISOString().split("T")[0] : ""
+      );
+    if (filters.status) queryParams.append("status", filters.status || "");
+    if (filters.type) queryParams.append("type", filters.type || "");
 
     axios
       .get(
-        `${SERVER_URL}/api/assets/filter?orgId=${orgId}&${queryParams}`
+        `${SERVER_URL}/api/assets/organization?orgId=${orgId}&${queryParams}`
       )
       .then((response) => {
         setAssets(response.data);
@@ -201,6 +194,8 @@ const AssetInventoryPage = () => {
 
   const columns = [
     { id: "name", label: "Name", minWidth: 170 },
+    { id: "version", label: "Version", minWidth: 150 },
+    { id: "type", label: "Type", minWidth: 100 },
     { id: "criticality", label: "Criticality", minWidth: 100 },
     { id: "confidentiality", label: "Confidentiality", minWidth: 100 },
     { id: "availability", label: "Availability", minWidth: 100 },
@@ -209,15 +204,31 @@ const AssetInventoryPage = () => {
     { id: "location", label: "Location", minWidth: 100 },
     { id: "department", label: "Department", minWidth: 100 },
     { id: "retentionPeriod", label: "Retention Period", minWidth: 100 },
-    { id: "financialValue", label: "Financial Value", minWidth: 100 },
     { id: "acquisitionDate", label: "Acquisition Date", minWidth: 100 },
-    { id: "status", label: "Status", minWidth: 100 },
-    { id: "type", label: "Type", minWidth: 100 },
-    { id: "currentLifeCycleStage", label: "Life Cycle Stage", minWidth: 150 },
+    { id: "dateOfDisposal", label: "Date of Disposal", minWidth: 100 },
+    { id: "financialValue", label: "Financial Value", minWidth: 100 },
+    { id: "status", label: "Status", minWidth: 100 }
   ];
 
+  const extractFormData = (formData) => {
+    let asset = {};
+    for (let [key, value] of formData.entries()) {
+      switch (key) {
+        case "retentionPeriod":
+          asset[key] = parseInt(value, 10);
+          break;
+        case "financialValue":
+          asset[key] = parseFloat(value);
+          break;
+        default:
+          asset[key] = value;
+      }
+    }
+    return asset;
+  };
+
   return (
-    <div>
+    <div style={{width: "calc(100vw - 310px)"}}>
       <PageTitle title="Asset Inventory" />
       <CustomToolbar>
         <Button variant="contained" onClick={handleAddAsset}>
