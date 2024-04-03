@@ -4,6 +4,7 @@ import Sidebar from './components/Sidebar';
 import MainContainer from './components/MainContainer';
 import OrganizationManagementPage from './pages/OrganizationManagementPage';
 import AssetInventoryPage from './pages/AssetInventoryPage';
+import DashboardIcon from '@mui/icons-material/Dashboard';
 
 function App() {
     return (

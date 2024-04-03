@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import org.apache.poi.ss.usermodel.*;
@@ -28,7 +29,7 @@ import java.math.BigInteger;
 
 @RestController
 @RequestMapping("/api/assets")
-@CrossOrigin(origins = {"http://localhost:3000", "http://192.168.169.11:3000"})
+@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001", "http://192.168.169.11:3000"})
 public class AssetController {
 
     private final AssetService assetService;
@@ -45,6 +46,8 @@ public class AssetController {
         return new ResponseEntity<>(assets, HttpStatus.OK);
     }
 
+
+    @PreAuthorize("hasPermission(#orgId, 'viewassets')")
     @GetMapping("/organization")
     public ResponseEntity<List<Asset>> getAssetsByOrganization(
                                                                  @RequestParam(required = true) Long orgId,
