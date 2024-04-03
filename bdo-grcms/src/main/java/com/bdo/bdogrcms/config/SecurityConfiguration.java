@@ -16,9 +16,9 @@ import org.springframework.web.filter.CorsFilter;
 
 import java.util.ArrayList;
 
-@Configuration
-@EnableWebSecurity
-@EnableMethodSecurity(prePostEnabled = true, securedEnabled = true)
+//@Configuration
+//@EnableWebSecurity
+//@EnableMethodSecurity(prePostEnabled = true, securedEnabled = true)
 public class SecurityConfiguration {
 
     private static final String[] AUTH_WHITELIST = {

@@ -47,7 +47,7 @@ public class AssetController {
     }
 
 
-    @PreAuthorize("hasPermission(#orgId, 'viewassets')")
+    //@PreAuthorize("hasPermission(#orgId, 'viewassets')")
     @GetMapping("/organization")
     public ResponseEntity<List<Asset>> getAssetsByOrganization(
                                                                  @RequestParam(required = true) Long orgId,
